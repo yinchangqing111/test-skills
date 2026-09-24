@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Order Checkout</title>
+<style>
+  * {box-sizing:border-box} body {margin:0;background:#f7f8fa;color:#20242b;font:16px system-ui}
+  main {max-width:860px;margin:40px auto;padding:0 20px} h1 {font-size:26px} h2 {font-size:19px}
+  header {border-bottom:1px solid #c9cdd2;padding-bottom:12px} .badge {color:#855700}
+  form,section {padding:20px 0;border-bottom:1px solid #c9cdd2}
+  button,input {font:inherit;padding:10px;border:1px solid #9299a1;border-radius:4px}
+  button {background:#176644;color:white;cursor:pointer} button:disabled {opacity:.5;cursor:default}
+  input {width:80px;margin:0 10px} table {width:100%;border-collapse:collapse}
+  th,td {text-align:left;padding:10px 4px;border-bottom:1px solid #ddd}
+  #message {min-height:24px;color:#8a3100} .numbers {display:flex;gap:28px;flex-wrap:wrap}
+  @media(max-width:480px) {main {margin-top:20px} th,td {font-size:14px} input {margin:8px 4px}}
+</style>
+<main>
+  <header><h1>Order Checkout</h1><p class="badge">Sandbox payments</p></header>
+  <form id="checkout">
+    <h2>Studio Mug</h2><p>$5.00 each</p>
+    <label for="quantity">Quantity</label><input id="quantity" type="number" min="1" max="5" value="2" required>
+    <button id="submit" type="submit">Create order</button>
+  </form>
+  <p id="message" role="status" aria-live="polite"></p>
+  <section class="numbers"><span>Stock: <strong id="stock">...</strong></span>
+    <span>Payment entries: <strong id="payments">0</strong></span>
+    <span>Callbacks: <strong id="callbacks">0</strong></span></section>
+  <section><h2>Orders</h2><table><thead><tr><th>Order</th><th>Quantity</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody id="orders"></tbody></table></section>
+  <section><h2>Payment events</h2><button id="replay" disabled>Replay callback</button></section>
+</main>
+<script>
+const doubleSubmitBug = __DOUBLE_SUBMIT_BUG__;
+let busy = false, latestPayment = null;
+const el = id => document.getElementById(id);
+async function api(path, body, headers = {}) {
+  const response = await fetch(path, body ? {method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)} : {});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error);
+  return data;
+}
+async function refresh() {
+  const state = await api('/api/state');
+  el('stock').textContent = state.inventory[0].quantity;
+  el('payments').textContent = state.payments.length;
+  el('callbacks').textContent = state.callbacks.length;
+  el('orders').replaceChildren();
+  for (const order of state.orders) {
+    const row = document.createElement('tr');
+    for (const value of [order.id, order.quantity, '$' + (order.amount_cents / 100).toFixed(2), order.status]) {
+      const cell = document.createElement('td'); cell.textContent = value; row.append(cell);
+    }
+    const cell = document.createElement('td'), button = document.createElement('button');
+    button.textContent = 'Pay'; button.disabled = order.status === 'paid';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try { latestPayment = await api('/api/payments', {order_id:order.id,mode:'sandbox'});
+        el('replay').disabled = false; el('message').textContent = 'Payment complete'; await refresh();
+      } catch (error) {el('message').textContent = error.message; button.disabled = false;}
+    });
+    cell.append(button); row.append(cell); el('orders').append(row);
+  }
+}
+el('checkout').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!doubleSubmitBug && busy) return;
+  busy = true;
+  if (!doubleSubmitBug) el('submit').disabled = true;
+  try { await api('/api/orders', {quantity:Number(el('quantity').value),request_key:crypto.randomUUID()});
+    el('message').textContent = 'Order created'; await refresh();
+  } catch (error) {el('message').textContent = error.message;}
+  finally {busy = false; el('submit').disabled = false;}
+});
+el('replay').addEventListener('click', async () => {
+  el('replay').disabled = true;
+  try { await api('/api/callback', latestPayment, {'X-Fixture-Callback':'local-test-only'});
+    el('message').textContent = 'Callback replayed'; await refresh();
+  } catch (error) {el('message').textContent = error.message;}
+  finally {el('replay').disabled = false;}
+});
+refresh().catch(error => el('message').textContent = error.message);
+</script>
+</html>

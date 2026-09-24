@@ -1,0 +1,4 @@
+interface:
+  display_name: "生成业务测试点"
+  short_description: "处理新自测、回归或当前轮尚未确认的输入，生成可确认业务测试点"
+  default_prompt: "使用 $make-business-test-points 处理本次新自测或回归：从需求、代码或改动生成业务测试点，等我确认当前轮载荷后再继续执行。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "执行业务自测"
+  short_description: "仅按当前交互已确认且本轮 ID、摘要和快照匹配的载荷执行业务自测"
+  default_prompt: "使用 $check-code-with-business-tests 按当前交互已确认、且本轮 ID、SHA-256 和代码快照均匹配的载荷测试当前代码，并输出 Markdown 自测报告。"

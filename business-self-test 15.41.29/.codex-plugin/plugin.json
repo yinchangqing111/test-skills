@@ -1,0 +1,18 @@
+{
+  "name": "business-self-test",
+  "version": "0.1.0+codex.20260924060005",
+  "description": "Generate confirmed business test points and verify frontend, backend, or full-stack code with realistic business flows.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "QA-test",
+    "shortDescription": "Generate and run business self-tests",
+    "longDescription": "QA-test turns requirements, code, and diffs into confirmed business test points, then verifies the code with evidence-based Markdown reports.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "\u4f7f\u7528 $make-business-test-points \u5bf9\u672c\u6b21\u6539\u52a8\u505a\u63d0\u6d4b\u524d\u4e1a\u52a1\u81ea\u6d4b\uff0c\u786e\u8ba4\u6d4b\u8bd5\u70b9\u540e\u7ee7\u7eed\u6267\u884c\u5e76\u8f93\u51fa\u62a5\u544a\u3002"
+  }
+}
